@@ -4,7 +4,10 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.myoffice.payroll_system.dto.EmployeeDTO;
+import com.myoffice.payroll_system.dto.EmployeeDTO.EmployeeResponse;
 import com.myoffice.payroll_system.entity.Employee;
+import com.myoffice.payroll_system.exception.ResourceNotFoundException;
 import com.myoffice.payroll_system.repository.EmployeeRepository;
 
 import jakarta.transaction.Transactional;
@@ -15,30 +18,56 @@ import lombok.RequiredArgsConstructor;
 public class EmployeeService {
     private final EmployeeRepository employeeRepository;
 
-    public List<Employee> getAllEmployees() {
-        return employeeRepository.findAll();
+    public List<EmployeeResponse> getAllEmployees() {
+        List<Employee> employees = employeeRepository.findAll();
+        return employees.stream()
+            .map(this::convertToResponse)
+            .toList();
     }
 
-    public Employee getEmployeeById(Long id) {
-        return employeeRepository.findById(id).orElseThrow(() -> new RuntimeException("Employee not found"));
+    public EmployeeResponse getEmployeeById(Long id) {
+        Employee employee = employeeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Employee not found"));
+        return convertToResponse(employee);
     }
 
     @Transactional
-    public Employee createEmployee(Employee employee) {
-        return employeeRepository.save(employee);
+    public EmployeeResponse createEmployee(EmployeeDTO.EmployeeRequest employeeRequest) {
+        Employee employee = new Employee();
+        employee.setFullName(employeeRequest.getFullName());
+        employee.setPosition(employeeRequest.getPosition());
+        employee.setBaseSalary(employeeRequest.getBaseSalary());
+        employee.setEmail(employeeRequest.getEmail());
+        employee.setRole(employeeRequest.getRole());
+        Employee savedEmployee = employeeRepository.save(employee);
+        return convertToResponse(savedEmployee);
     }
 
     @Transactional
-    public Employee updateEmployee(Long id, Employee employeeDetails) {
-        Employee employee = getEmployeeById(id);
-        employee.setFullName(employeeDetails.getFullName());
-        employee.setPosition(employeeDetails.getPosition());
-        employee.setBaseSalary(employeeDetails.getBaseSalary());
-        return employeeRepository.save(employee);
+    public EmployeeResponse updateEmployee(Long id, EmployeeDTO.EmployeeRequest employeeRequest) {
+        Employee employee = employeeRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Employee not found"));
+        employee.setFullName(employeeRequest.getFullName());
+        employee.setPosition(employeeRequest.getPosition());
+        employee.setBaseSalary(employeeRequest.getBaseSalary());
+        employee.setEmail(employeeRequest.getEmail());
+        employee.setRole(employeeRequest.getRole());
+        Employee savedEmployee = employeeRepository.save(employee);
+        return convertToResponse(savedEmployee);
     }
 
     @Transactional
     public void deleteEmployee(Long id) {
         employeeRepository.deleteById(id);
     }
+
+private EmployeeResponse convertToResponse(Employee employee) {
+    EmployeeResponse response = new EmployeeResponse();
+    response.setId(employee.getId());
+    response.setFullName(employee.getFullName());
+    response.setPosition(employee.getPosition());
+    response.setBaseSalary(employee.getBaseSalary());
+    response.setEmail(employee.getEmail());
+    response.setRole(employee.getRole());
+    return response;
+}
 }

@@ -2,18 +2,22 @@ package com.myoffice.payroll_system.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.myoffice.payroll_system.dto.PayrollDTO.PayrollRequest;
+import com.myoffice.payroll_system.dto.PayrollDTO.PayrollResponse;
 import com.myoffice.payroll_system.entity.Employee;
 import com.myoffice.payroll_system.entity.Payroll;
+import com.myoffice.payroll_system.entity.PayrollStatus;
 import com.myoffice.payroll_system.entity.ShiftAssignment;
-import com.myoffice.payroll_system.entity.WorkShift;
+import com.myoffice.payroll_system.exception.DuplicateResourceException;
+import com.myoffice.payroll_system.exception.ResourceNotFoundException;
 import com.myoffice.payroll_system.repository.EmployeeRepository;
 import com.myoffice.payroll_system.repository.PayrollRepository;
 import com.myoffice.payroll_system.repository.ShiftAssignmentRepository;
-import com.myoffice.payroll_system.repository.WorkShiftRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -27,42 +31,69 @@ public class PayrollService {
     private final EmployeeRepository employeeRepository;
 
     @Transactional
-    public Payroll generateMonthlyPayroll(Long employeeId, int year, int month) {
-        LocalDate start = LocalDate.of(year, month, 1);
-        LocalDate end = start.withDayOfMonth(start.lengthOfMonth());
+    public PayrollResponse createPayroll(PayrollRequest request) {
+        Employee employee = employeeRepository.findById(request.getEmployeeId())
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found"));
 
-        List<ShiftAssignment> shifts = shiftAssignmentRepository
-                .findByEmployeeIdAndWorkDateBetween(employeeId, start, end);
+        payrollRepository.findByEmployeeIdAndMonthAndYear(request.getEmployeeId(), request.getMonth(), request.getYear())
+                .ifPresent(p -> {
+                    throw new DuplicateResourceException("Payroll for this employee in this month and year already exists.");
+                });
 
-        Employee employee = employeeRepository.findById(employeeId)
-            .orElseThrow(() -> new RuntimeException("Employee not found"));
+        LocalDate startDate = LocalDate.of(request.getYear(), request.getMonth(), 1);
+        LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
 
-        BigDecimal totalAmount = calculateTotal(employee, shifts);
-        
-        Payroll payroll = new Payroll();
-        payroll.setEmployee(employee);
-        payroll.setTotalAmount(totalAmount);
-        payroll.setMonth(month);
-        payroll.setYear(year);
-        
-        return payrollRepository.save(payroll);
-    }
+        List<ShiftAssignment> assignments = shiftAssignmentRepository
+            .findByEmployeeIdAndWorkDateBetween(request.getEmployeeId(), startDate, endDate);
 
-    private BigDecimal calculateTotal(Employee employee, List<ShiftAssignment> shifts) {
-        BigDecimal totalAmount = employee.getBaseSalary() != null ? employee.getBaseSalary() : BigDecimal.ZERO;
+        BigDecimal totalOT = BigDecimal.ZERO;
 
-        if (shifts != null) {
-            BigDecimal extraAmount = shifts.stream()
-                    .filter(shift -> shift.getWorkShift() != null && shift.getWorkShift().getExtraHourRate() != null)
-                    .map(shift -> shift.getWorkShift().getExtraHourRate())
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            totalAmount = totalAmount.add(extraAmount);
+        for (ShiftAssignment assignment : assignments) {
+            if (assignment.getWorkShift() != null) {
+                totalOT = totalOT.add(assignment.getWorkShift().getExtraHourRate());
+            }
         }
 
-        return totalAmount;
+        BigDecimal totalAmount = employee.getBaseSalary().add(totalOT);
+
+        Payroll payroll = new Payroll();
+        payroll.setEmployee(employee);
+        payroll.setYear(request.getYear());
+        payroll.setMonth(request.getMonth());
+        payroll.setStatus(PayrollStatus.PENDING);
+        payroll.setTotalAmount(totalAmount);
+        payroll.setProcessedAt(LocalDateTime.now());
+        Payroll savedPayroll = payrollRepository.save(payroll);
+        return convertToResponse(savedPayroll);
     }
 
-    public List<Payroll> getPayrollHistory(int year, int month) {
-        return payrollRepository.findByMonthAndYear(month, year);
+    @Transactional
+    public List<PayrollResponse> getAllPayrollResponse(){
+        List<Payroll> payrolls = payrollRepository.findAll();
+        return payrolls.stream().map(this::convertToResponse).toList();
+    }
+
+    @Transactional
+    public PayrollResponse getPayrollResponseById(Long id){
+        Payroll payroll = payrollRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Payroll not found"));
+        return convertToResponse(payroll);
+    }
+
+    @Transactional
+    public void deletePayroll(Long id) {
+        payrollRepository.deleteById(id);
+    }
+
+    public PayrollResponse convertToResponse(Payroll payroll) {
+        PayrollResponse response = new PayrollResponse();
+        response.setId(payroll.getId());
+        response.setEmployeeId(payroll.getEmployee().getId());
+        response.setYear(payroll.getYear());
+        response.setMonth(payroll.getMonth());
+        response.setStatus(payroll.getStatus());
+        response.setProcessedAt(payroll.getProcessedAt());
+        response.setTotalAmount(payroll.getTotalAmount());
+        return response;
     }
 }
