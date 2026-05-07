@@ -138,7 +138,6 @@ class WorkShiftServiceTest {
     assertEquals("Work shift not found", ex.getMessage());
   }
 
-  
   @Test
   void getWorkShiftById_shouldThrowResourceNotFoundException_whenWorkShiftNotFound() {
     when(workShiftRepository.findById(1L)).thenReturn(Optional.empty());
