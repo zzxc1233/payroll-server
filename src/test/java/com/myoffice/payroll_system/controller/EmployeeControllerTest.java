@@ -16,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.myoffice.payroll_system.config.SecurityAccessService;
 import com.myoffice.payroll_system.dto.EmployeeDTO;
 import com.myoffice.payroll_system.dto.EmployeeDTO.EmployeeResponse;
 import com.myoffice.payroll_system.entity.UserRole;
@@ -30,6 +31,9 @@ public class EmployeeControllerTest {
 
     @MockitoBean
     private EmployeeService employeeService;
+
+    @MockitoBean
+    private SecurityAccessService securityAccessService;
 
     @Test
     void getAllEmployees_shouldReturnList() throws Exception {
@@ -58,6 +62,7 @@ public class EmployeeControllerTest {
         response.setFullName("John Doe");
 
         when(employeeService.getEmployeeById(1L)).thenReturn(response);
+        when(securityAccessService.canAccessEmployee(any(), any(Long.class))).thenReturn(true);
 
         mockMvc.perform(get("/api/employees/{id}", 1L))
                 .andExpect(status().isOk())

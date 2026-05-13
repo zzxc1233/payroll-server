@@ -20,6 +20,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.myoffice.payroll_system.config.SecurityAccessService;
 import com.myoffice.payroll_system.dto.ShiftAssignmentDTO.ShiftAssignmentRequest;
 import com.myoffice.payroll_system.dto.ShiftAssignmentDTO.ShiftAssignmentResponse;
 import com.myoffice.payroll_system.exception.ResourceNotFoundException;
@@ -34,6 +35,9 @@ public class ShiftAssignmentControllerTest {
 
     @MockitoBean
     private ShiftAssignmentService shiftAssignmentService;
+
+    @MockitoBean
+    private SecurityAccessService securityAccessService;
 
     @Test
     void getAllShiftAssignments_shouldReturnList() throws Exception {
@@ -65,6 +69,8 @@ public class ShiftAssignmentControllerTest {
         response.setWorkShiftId(1L);
         response.setWorkDate(testDate);
 
+        when(shiftAssignmentService.getEmployeeIdForShiftAssignment(1L)).thenReturn(1L);
+        when(securityAccessService.canAccessShiftAssignment(any(), any(Long.class))).thenReturn(true);
         when(shiftAssignmentService.getShiftAssignmentById(1L)).thenReturn(response);
 
         mockMvc.perform(get("/api/shift-assignments/{id}", 1L)
@@ -141,6 +147,8 @@ public class ShiftAssignmentControllerTest {
 
     @Test
     void getShiftAssignmentById_shouldThrowResourceNotFoundException_whenShiftAssignmentNotFound() throws Exception {
+        when(shiftAssignmentService.getEmployeeIdForShiftAssignment(1L)).thenReturn(1L);
+        when(securityAccessService.canAccessShiftAssignment(any(), any(Long.class))).thenReturn(true);
         when(shiftAssignmentService.getShiftAssignmentById(1L))
                 .thenThrow(new ResourceNotFoundException("Shift assignment not found"));
 
