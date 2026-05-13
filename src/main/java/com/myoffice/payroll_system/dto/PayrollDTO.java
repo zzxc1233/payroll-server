@@ -25,13 +25,8 @@ public class PayrollDTO {
         @Max(value = 12, message = "Month must be less than or equal to 12")
         private int month;
 
-        @NotNull
         private PayrollStatus status;
-
-        @NotNull
         private LocalDateTime processedAt;
-
-        @NotNull
         private BigDecimal totalAmount;
     }
 
