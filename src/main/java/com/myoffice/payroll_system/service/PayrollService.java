@@ -74,10 +74,24 @@ public class PayrollService {
     }
 
     @Transactional
+    public List<PayrollResponse> getPayrollResponsesByEmployeeId(Long employeeId) {
+        return payrollRepository.findByEmployeeId(employeeId).stream()
+                .map(this::convertToResponse)
+                .toList();
+    }
+
+    @Transactional
     public PayrollResponse getPayrollResponseById(Long id){
         Payroll payroll = payrollRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Payroll not found"));
         return convertToResponse(payroll);
+    }
+
+    @Transactional
+    public Long getEmployeeIdForPayroll(Long payrollId) {
+        Payroll payroll = payrollRepository.findById(payrollId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payroll not found"));
+        return payroll.getEmployee().getId();
     }
 
     @Transactional

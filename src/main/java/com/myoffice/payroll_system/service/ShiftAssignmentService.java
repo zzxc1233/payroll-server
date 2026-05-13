@@ -29,10 +29,22 @@ public class ShiftAssignmentService {
             .toList();
     }
 
+    public List<ShiftAssignmentResponse> getShiftAssignmentsByEmployeeId(Long employeeId) {
+        return shiftAssignmentRepository.findByEmployeeId(employeeId).stream()
+                .map(this::convertToResponse)
+                .toList();
+    }
+
     public ShiftAssignmentResponse getShiftAssignmentById(Long id) {
         ShiftAssignment shiftAssignment = shiftAssignmentRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Shift assignment not found"));
         return convertToResponse(shiftAssignment);
+    }
+
+    public Long getEmployeeIdForShiftAssignment(Long shiftAssignmentId) {
+        ShiftAssignment shiftAssignment = shiftAssignmentRepository.findById(shiftAssignmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Shift assignment not found"));
+        return shiftAssignment.getEmployee().getId();
     }
 
     @Transactional

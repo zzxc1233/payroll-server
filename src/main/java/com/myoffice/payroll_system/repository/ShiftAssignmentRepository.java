@@ -11,5 +11,6 @@ import com.myoffice.payroll_system.entity.ShiftAssignment;
 @Repository
 public interface ShiftAssignmentRepository extends JpaRepository<ShiftAssignment, Long> {
     List<ShiftAssignment> findByWorkDateBetween(LocalDate start, LocalDate end);
+    List<ShiftAssignment> findByEmployeeId(Long employeeId);
     List<ShiftAssignment> findByEmployeeIdAndWorkDateBetween(Long employeeId, LocalDate start, LocalDate end);
 }
