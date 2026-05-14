@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
@@ -22,6 +23,7 @@ import com.myoffice.payroll_system.dto.ShiftAssignmentDTO.ShiftAssignmentRequest
 import com.myoffice.payroll_system.entity.Employee;
 import com.myoffice.payroll_system.entity.ShiftAssignment;
 import com.myoffice.payroll_system.entity.WorkShift;
+import com.myoffice.payroll_system.exception.DuplicateResourceException;
 import com.myoffice.payroll_system.exception.ResourceNotFoundException;
 import com.myoffice.payroll_system.repository.EmployeeRepository;
 import com.myoffice.payroll_system.repository.ShiftAssignmentRepository;
@@ -101,6 +103,7 @@ public class ShiftAssignmentServiceTest {
         ShiftAssignmentDTO.ShiftAssignmentRequest request = new ShiftAssignmentDTO.ShiftAssignmentRequest();
         request.setEmployeeId(1L);
         request.setWorkShiftId(1L);
+        request.setWorkDate(LocalDate.of(2024, 5, 6));
         request.setNote("Test Shift");
 
         Employee employee = new Employee();
@@ -119,6 +122,7 @@ public class ShiftAssignmentServiceTest {
 
         when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
         when(workShiftRepository.findById(1L)).thenReturn(Optional.of(workShift));
+        when(shiftAssignmentRepository.existsByEmployeeIdAndWorkDate(1L, LocalDate.of(2024, 5, 6))).thenReturn(false);
         when(shiftAssignmentRepository.save(any(ShiftAssignment.class))).thenReturn(shiftAssignment);
 
         ShiftAssignmentDTO.ShiftAssignmentResponse result = shiftAssignmentService.createShiftAssignment(request);
@@ -137,6 +141,7 @@ public class ShiftAssignmentServiceTest {
         ShiftAssignmentRequest request = new ShiftAssignmentRequest();
         request.setEmployeeId(1L);
         request.setWorkShiftId(1L);
+        request.setWorkDate(LocalDate.of(2024, 5, 7));
         request.setNote("Updated Shift");
 
         Employee employee = new Employee();
@@ -156,6 +161,7 @@ public class ShiftAssignmentServiceTest {
         when(shiftAssignmentRepository.findById(1L)).thenReturn(Optional.of(existingShiftAssignment));
         when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
         when(workShiftRepository.findById(1L)).thenReturn(Optional.of(workShift));
+        when(shiftAssignmentRepository.existsByEmployeeIdAndWorkDateAndIdNot(1L, LocalDate.of(2024, 5, 7), 1L)).thenReturn(false);
         when(shiftAssignmentRepository.save(any(ShiftAssignment.class))).thenReturn(existingShiftAssignment);
 
         ShiftAssignmentDTO.ShiftAssignmentResponse result = shiftAssignmentService.updateShiftAssignment(1L, request);
@@ -183,5 +189,29 @@ public class ShiftAssignmentServiceTest {
     void getShiftAssignmentById_shouldThrowResourceNotFoundException_whenShiftAssignmentNotFound() {
         when(shiftAssignmentRepository.findById(1L)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> shiftAssignmentService.getShiftAssignmentById(1L));
+    }
+
+    @Test
+    void createShiftAssignment_shouldThrowDuplicateResourceException_whenEmployeeAlreadyHasAssignmentOnDate() {
+        ShiftAssignmentRequest request = new ShiftAssignmentRequest();
+        request.setEmployeeId(1L);
+        request.setWorkShiftId(1L);
+        request.setWorkDate(LocalDate.of(2024, 5, 6));
+
+        when(shiftAssignmentRepository.existsByEmployeeIdAndWorkDate(1L, LocalDate.of(2024, 5, 6))).thenReturn(true);
+
+        assertThrows(DuplicateResourceException.class, () -> shiftAssignmentService.createShiftAssignment(request));
+    }
+
+    @Test
+    void updateShiftAssignment_shouldThrowDuplicateResourceException_whenEmployeeAlreadyHasAnotherAssignmentOnDate() {
+        ShiftAssignmentRequest request = new ShiftAssignmentRequest();
+        request.setEmployeeId(1L);
+        request.setWorkShiftId(1L);
+        request.setWorkDate(LocalDate.of(2024, 5, 6));
+
+        when(shiftAssignmentRepository.existsByEmployeeIdAndWorkDateAndIdNot(1L, LocalDate.of(2024, 5, 6), 1L)).thenReturn(true);
+
+        assertThrows(DuplicateResourceException.class, () -> shiftAssignmentService.updateShiftAssignment(1L, request));
     }
 }

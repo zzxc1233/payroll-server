@@ -62,6 +62,6 @@ public class ShiftAssignmentController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteShiftAssignment(@PathVariable Long id) {
         shiftAssignmentService.deleteShiftAssignment(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 }

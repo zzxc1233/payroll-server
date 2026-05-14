@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.myoffice.payroll_system.dto.ShiftAssignmentDTO.ShiftAssignmentRequest;
 import com.myoffice.payroll_system.dto.ShiftAssignmentDTO.ShiftAssignmentResponse;
 import com.myoffice.payroll_system.entity.ShiftAssignment;
+import com.myoffice.payroll_system.exception.DuplicateResourceException;
 import com.myoffice.payroll_system.exception.ResourceNotFoundException;
 import com.myoffice.payroll_system.repository.EmployeeRepository;
 import com.myoffice.payroll_system.repository.ShiftAssignmentRepository;
@@ -49,6 +50,10 @@ public class ShiftAssignmentService {
 
     @Transactional
     public ShiftAssignmentResponse createShiftAssignment(ShiftAssignmentRequest request) {
+        if (shiftAssignmentRepository.existsByEmployeeIdAndWorkDate(request.getEmployeeId(), request.getWorkDate())) {
+            throw new DuplicateResourceException("Shift assignment for this employee on this date already exists.");
+        }
+
         ShiftAssignment shiftAssignment = new ShiftAssignment();
         shiftAssignment.setEmployee(employeeRepository.findById(request.getEmployeeId())
             .orElseThrow(() -> new ResourceNotFoundException("Employee not found")));
@@ -62,6 +67,10 @@ public class ShiftAssignmentService {
     
     @Transactional
     public ShiftAssignmentResponse updateShiftAssignment(Long id, ShiftAssignmentRequest request) {
+        if (shiftAssignmentRepository.existsByEmployeeIdAndWorkDateAndIdNot(request.getEmployeeId(), request.getWorkDate(), id)) {
+            throw new DuplicateResourceException("Shift assignment for this employee on this date already exists.");
+        }
+
         ShiftAssignment shiftAssignment = shiftAssignmentRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Shift assignment not found"));
         shiftAssignment.setEmployee(employeeRepository.findById(request.getEmployeeId())

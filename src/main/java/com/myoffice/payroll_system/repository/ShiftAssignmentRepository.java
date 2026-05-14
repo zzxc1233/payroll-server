@@ -13,4 +13,8 @@ public interface ShiftAssignmentRepository extends JpaRepository<ShiftAssignment
     List<ShiftAssignment> findByWorkDateBetween(LocalDate start, LocalDate end);
     List<ShiftAssignment> findByEmployeeId(Long employeeId);
     List<ShiftAssignment> findByEmployeeIdAndWorkDateBetween(Long employeeId, LocalDate start, LocalDate end);
+    boolean existsByEmployeeId(Long employeeId);
+    boolean existsByWorkShiftId(Long workShiftId);
+    boolean existsByEmployeeIdAndWorkDate(Long employeeId, LocalDate workDate);
+    boolean existsByEmployeeIdAndWorkDateAndIdNot(Long employeeId, LocalDate workDate, Long id);
 }

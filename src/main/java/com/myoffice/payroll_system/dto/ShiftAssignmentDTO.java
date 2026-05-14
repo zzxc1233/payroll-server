@@ -3,6 +3,7 @@ package com.myoffice.payroll_system.dto;
 import java.time.LocalDate;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 @Data
@@ -12,9 +13,11 @@ public class ShiftAssignmentDTO {
         private Long id;
 
         @NotNull
+        @Positive(message = "Employee id must be greater than 0")
         private Long employeeId;
 
         @NotNull
+        @Positive(message = "Work shift id must be greater than 0")
         private Long workShiftId;
         
         @NotNull

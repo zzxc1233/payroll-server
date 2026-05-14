@@ -142,7 +142,7 @@ public class ShiftAssignmentControllerTest {
     void deleteShiftAssignment_shouldDeleteShiftAssignment() throws Exception {
         mockMvc.perform(delete("/api/shift-assignments/{id}", 1L)
                 .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
     }
 
     @Test
