@@ -14,7 +14,8 @@ Use the Maven wrapper included in the repository.
 ### Windows PowerShell
 
 ```powershell
-.\mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=dev
+$env:SPRING_PROFILES_ACTIVE="dev"
+.\mvnw.cmd spring-boot:run
 ```
 
 ### Windows Command Prompt
@@ -62,7 +63,8 @@ Contains only shared application settings and environment variable bindings.
 Use for local development:
 
 - SQL logging enabled
-- Hibernate schema auto-update enabled
+- Hibernate schema validation enabled
+- Flyway migrations enabled
 - Application log level set to debug
 
 ### Production
@@ -73,6 +75,7 @@ Use for deployed environments:
 
 - SQL logging disabled
 - Hibernate schema validation enabled
+- Flyway migrations enabled
 - Safer log levels
 
 ## Local Overrides
@@ -186,6 +189,24 @@ Notes for Supabase:
 - If you want an employee to call endpoints guarded by `hasRole("EMPLOYEE")`, you must add that application role in the JWT claims or adjust the authorization rules.
 
 If you later add a real login flow to this project, the next safe step is still to keep Supabase as the identity provider and map its user identity to your employee records instead of issuing tokens directly from controller code.
+
+## Data Integrity
+
+This project now uses a small set of database guardrails to prevent invalid data:
+
+- employee email must be unique
+- one payroll per employee per month/year
+- one shift assignment per employee per date
+- important columns such as salary, role, payroll status, and processed date are required
+
+Validation is also applied at request level:
+
+- `baseSalary` must be greater than `0`
+- `extraHourRate` must be greater than or equal to `0`
+- `startTime` must be before `endTime`
+- ids in request payloads must be positive
+
+The goal is to catch mistakes early in the API layer and still let the database enforce the final safety net.
 
 ## Notes on Maven Wrapper
 
