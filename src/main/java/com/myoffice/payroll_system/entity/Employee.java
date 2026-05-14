@@ -26,11 +26,13 @@ public class Employee {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @Column(nullable = false)
     private String position;
 
-    @Column(precision = 10, scale = 2)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal baseSalary;
 
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private UserRole role;
 }

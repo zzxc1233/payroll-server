@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 
 import com.myoffice.payroll_system.entity.UserRole;
 
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -32,6 +33,7 @@ public class EmployeeDTO {
         private String position;
 
         @NotNull(message = "Base salary is required")
+        @DecimalMin(value = "0.01", message = "Base salary must be greater than 0")
         private BigDecimal baseSalary;
 
         @NotBlank(message = "Email is required")

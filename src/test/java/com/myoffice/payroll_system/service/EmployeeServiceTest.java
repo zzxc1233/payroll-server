@@ -2,9 +2,12 @@ package com.myoffice.payroll_system.service;
 
 import com.myoffice.payroll_system.entity.Employee;
 import com.myoffice.payroll_system.repository.EmployeeRepository;
+import com.myoffice.payroll_system.repository.PayrollRepository;
+import com.myoffice.payroll_system.repository.ShiftAssignmentRepository;
 import com.myoffice.payroll_system.entity.UserRole;
 import com.myoffice.payroll_system.dto.EmployeeDTO.EmployeeResponse;
 import com.myoffice.payroll_system.dto.EmployeeDTO.EmployeeRequest;
+import com.myoffice.payroll_system.exception.ResourceConflictException;
 import com.myoffice.payroll_system.exception.ResourceNotFoundException;
 
 import java.math.BigDecimal;
@@ -29,6 +32,12 @@ class EmployeeServiceTest {
 
   @Mock
   private EmployeeRepository employeeRepository;
+
+  @Mock
+  private PayrollRepository payrollRepository;
+
+  @Mock
+  private ShiftAssignmentRepository shiftAssignmentRepository;
 
   @InjectMocks
   private EmployeeService employeeService;
@@ -150,7 +159,39 @@ class EmployeeServiceTest {
 
   @Test
   void deleteEmployee_shouldDeleteEmployee() {
+    Employee employee = new Employee();
+    employee.setId(1L);
+    when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
+    when(payrollRepository.existsByEmployeeId(1L)).thenReturn(false);
+    when(shiftAssignmentRepository.existsByEmployeeId(1L)).thenReturn(false);
+
     employeeService.deleteEmployee(1L);
-    verify(employeeRepository).deleteById(1L);
+
+    verify(employeeRepository).delete(employee);
+  }
+
+  @Test
+  void deleteEmployee_shouldThrowResourceConflictException_whenPayrollReferencesEmployee() {
+    Employee employee = new Employee();
+    employee.setId(1L);
+    when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
+    when(payrollRepository.existsByEmployeeId(1L)).thenReturn(true);
+
+    ResourceConflictException ex = assertThrows(ResourceConflictException.class,
+        () -> employeeService.deleteEmployee(1L));
+    assertEquals("Employee cannot be deleted because payroll records still reference it.", ex.getMessage());
+  }
+
+  @Test
+  void deleteEmployee_shouldThrowResourceConflictException_whenShiftAssignmentReferencesEmployee() {
+    Employee employee = new Employee();
+    employee.setId(1L);
+    when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
+    when(payrollRepository.existsByEmployeeId(1L)).thenReturn(false);
+    when(shiftAssignmentRepository.existsByEmployeeId(1L)).thenReturn(true);
+
+    ResourceConflictException ex = assertThrows(ResourceConflictException.class,
+        () -> employeeService.deleteEmployee(1L));
+    assertEquals("Employee cannot be deleted because shift assignments still reference it.", ex.getMessage());
   }
 }

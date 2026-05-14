@@ -7,8 +7,11 @@ import org.springframework.stereotype.Service;
 import com.myoffice.payroll_system.dto.EmployeeDTO;
 import com.myoffice.payroll_system.dto.EmployeeDTO.EmployeeResponse;
 import com.myoffice.payroll_system.entity.Employee;
+import com.myoffice.payroll_system.exception.ResourceConflictException;
 import com.myoffice.payroll_system.exception.ResourceNotFoundException;
 import com.myoffice.payroll_system.repository.EmployeeRepository;
+import com.myoffice.payroll_system.repository.PayrollRepository;
+import com.myoffice.payroll_system.repository.ShiftAssignmentRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +20,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EmployeeService {
     private final EmployeeRepository employeeRepository;
+    private final PayrollRepository payrollRepository;
+    private final ShiftAssignmentRepository shiftAssignmentRepository;
 
     public List<EmployeeResponse> getAllEmployees() {
         List<Employee> employees = employeeRepository.findAll();
@@ -57,7 +62,18 @@ public class EmployeeService {
 
     @Transactional
     public void deleteEmployee(Long id) {
-        employeeRepository.deleteById(id);
+        Employee employee = employeeRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Employee not found"));
+
+        if (payrollRepository.existsByEmployeeId(id)) {
+            throw new ResourceConflictException("Employee cannot be deleted because payroll records still reference it.");
+        }
+
+        if (shiftAssignmentRepository.existsByEmployeeId(id)) {
+            throw new ResourceConflictException("Employee cannot be deleted because shift assignments still reference it.");
+        }
+
+        employeeRepository.delete(employee);
     }
 
 private EmployeeResponse convertToResponse(Employee employee) {
