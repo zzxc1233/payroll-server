@@ -96,8 +96,8 @@ public class PayrollControllerTest {
     }
 
     @Test
-    void deletePayroll_shouldReturnOk() throws Exception {
+    void deletePayroll_shouldReturnNoContent() throws Exception {
         mockMvc.perform(delete("/api/payrolls/{id}", 1L))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
     }
 }

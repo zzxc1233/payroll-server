@@ -55,6 +55,6 @@ public class PayrollController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePayroll(@PathVariable Long id) {
         payrollService.deletePayroll(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 }

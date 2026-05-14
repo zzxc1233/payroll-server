@@ -155,7 +155,12 @@ class PayrollServiceTest {
 
   @Test
   void deletePayroll_shouldDeletePayroll() {
+    Payroll payroll = new Payroll();
+    payroll.setId(1L);
+    when(payrollRepository.findById(1L)).thenReturn(Optional.of(payroll));
+
     payrollService.deletePayroll(1L);
-    verify(payrollRepository).deleteById(1L);
+
+    verify(payrollRepository).delete(payroll);
   }
 }

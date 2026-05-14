@@ -12,6 +12,7 @@ import com.myoffice.payroll_system.entity.Payroll;
 public interface PayrollRepository extends JpaRepository<Payroll, Long> {
     List<Payroll> findByMonthAndYear(Integer month, Integer year);
     List<Payroll> findByEmployeeId(Long employeeId);
+    boolean existsByEmployeeId(Long employeeId);
 
     Optional<Payroll> findByEmployeeIdAndMonthAndYear(Long employeeId, Integer month, Integer year);
 }

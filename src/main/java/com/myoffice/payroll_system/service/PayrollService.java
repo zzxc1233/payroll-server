@@ -96,7 +96,9 @@ public class PayrollService {
 
     @Transactional
     public void deletePayroll(Long id) {
-        payrollRepository.deleteById(id);
+        Payroll payroll = payrollRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Payroll not found"));
+        payrollRepository.delete(payroll);
     }
 
     public PayrollResponse convertToResponse(Payroll payroll) {

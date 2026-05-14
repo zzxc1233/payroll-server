@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import com.myoffice.payroll_system.entity.PayrollStatus;
 
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -16,6 +17,7 @@ public class PayrollDTO {
         private Long id;
 
         @NotNull
+        @Positive(message = "Employee id must be greater than 0")
         private Long employeeId;
 
         @Min(value = 2020, message = "Year must be greater than or equal to 2020")
