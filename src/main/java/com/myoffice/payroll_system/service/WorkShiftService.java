@@ -7,7 +7,9 @@ import org.springframework.stereotype.Service;
 import com.myoffice.payroll_system.dto.WorkshiftDTO.WorkshiftRequest;
 import com.myoffice.payroll_system.dto.WorkshiftDTO.WorkshiftResponse;
 import com.myoffice.payroll_system.entity.WorkShift;
+import com.myoffice.payroll_system.exception.ResourceConflictException;
 import com.myoffice.payroll_system.exception.ResourceNotFoundException;
+import com.myoffice.payroll_system.repository.ShiftAssignmentRepository;
 import com.myoffice.payroll_system.repository.WorkShiftRepository;
 
 import jakarta.transaction.Transactional;
@@ -17,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class WorkShiftService {
     private final WorkShiftRepository workShiftRepository;
+    private final ShiftAssignmentRepository shiftAssignmentRepository;
 
     public List<WorkshiftResponse> getAllWorkShifts() {
         List<WorkShift> workShifts = workShiftRepository.findAll();
@@ -54,7 +57,14 @@ public class WorkShiftService {
 
     @Transactional
     public void deleteWorkShift(Long id) {
-        workShiftRepository.deleteById(id);
+        WorkShift workShift = workShiftRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Work shift not found"));
+
+        if (shiftAssignmentRepository.existsByWorkShiftId(id)) {
+            throw new ResourceConflictException("Work shift cannot be deleted because shift assignments still reference it.");
+        }
+
+        workShiftRepository.delete(workShift);
     }
 
     private WorkshiftResponse convertToResponse(WorkShift workShift) {

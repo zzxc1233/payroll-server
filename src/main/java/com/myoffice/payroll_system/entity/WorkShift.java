@@ -22,8 +22,12 @@ public class WorkShift {
     @Column(nullable = false)
     private String shiftName;
 
+    @Column(nullable = false)
     private LocalTime startTime;
+
+    @Column(nullable = false)
     private LocalTime endTime;
 
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal extraHourRate;
 }

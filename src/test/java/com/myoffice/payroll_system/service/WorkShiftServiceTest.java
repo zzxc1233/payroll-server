@@ -22,7 +22,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.myoffice.payroll_system.dto.WorkshiftDTO.WorkshiftRequest;
 import com.myoffice.payroll_system.dto.WorkshiftDTO.WorkshiftResponse;
 import com.myoffice.payroll_system.entity.WorkShift;
+import com.myoffice.payroll_system.exception.ResourceConflictException;
 import com.myoffice.payroll_system.exception.ResourceNotFoundException;
+import com.myoffice.payroll_system.repository.ShiftAssignmentRepository;
 import com.myoffice.payroll_system.repository.WorkShiftRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,6 +32,9 @@ class WorkShiftServiceTest {
 
   @Mock
   private WorkShiftRepository workShiftRepository;
+
+  @Mock
+  private ShiftAssignmentRepository shiftAssignmentRepository;
 
   @InjectMocks
   private WorkShiftService workShiftService;
@@ -148,7 +153,25 @@ class WorkShiftServiceTest {
 
   @Test
   void deleteWorkShift_shouldDeleteWorkShift() {
+    WorkShift workShift = new WorkShift();
+    workShift.setId(1L);
+    when(workShiftRepository.findById(1L)).thenReturn(Optional.of(workShift));
+    when(shiftAssignmentRepository.existsByWorkShiftId(1L)).thenReturn(false);
+
     workShiftService.deleteWorkShift(1L);
-    verify(workShiftRepository).deleteById(1L);
+
+    verify(workShiftRepository).delete(workShift);
+  }
+
+  @Test
+  void deleteWorkShift_shouldThrowResourceConflictException_whenShiftAssignmentsReferenceWorkShift() {
+    WorkShift workShift = new WorkShift();
+    workShift.setId(1L);
+    when(workShiftRepository.findById(1L)).thenReturn(Optional.of(workShift));
+    when(shiftAssignmentRepository.existsByWorkShiftId(1L)).thenReturn(true);
+
+    ResourceConflictException ex = assertThrows(ResourceConflictException.class,
+        () -> workShiftService.deleteWorkShift(1L));
+    assertEquals("Work shift cannot be deleted because shift assignments still reference it.", ex.getMessage());
   }
 }
